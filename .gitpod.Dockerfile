@@ -1,21 +1,13 @@
-FROM gitpod/workspace-base
+FROM gitpod/workspace-full
 
-SHELL ["/bin/bash", "-c"]
-
-USER root
-
-RUN apt-get update
-RUN apt-get install -y locales locales-all
-ENV LC_ALL en_US.utf8
-ENV LANG en_US.utf8
-ENV LANGUAGE en_US.utf8
-
-USER gitpod
-
-RUN sh <(curl -L https://nixos.org/nix/install) --no-daemon
-
-ENV PATH="/home/gitpod/.nix-profile/bin:${PATH}"
-
-RUN nix-channel --update
-
-RUN nix-env -iA nixpkgs.agda
+# Install custom tools, runtime, etc.
+RUN brew install agda; \
+  brew install haskell-language-server; \ 
+  brew uninstall --ignore-dependencies emacs; brew deps emacs | xargs -n 1 brew uninstall --ignore-dependencies; \
+  rm -rf /home/linuxbrew/.linuxbrew/etc/unbound; \
+  rm -rf /home/linuxbrew/.linuxbrew/etc/gnutls; \
+  rm -rf /home/linuxbrew/.linuxbrew/etc/openssl@1.1; \
+  rm -rf /home/linuxbrew/.linuxbrew/etc/ca-certificates; \
+  rm -rf /home/linuxbrew/.linuxbrew/share/emacs/site-lisp/agda;
+RUN sed -i -e 's/gcc-5/gcc-9/g' /home/linuxbrew/.linuxbrew/Cellar/ghc/8.10.7_1/lib/ghc-8.10.7/settings;
+RUN cabal update; cabal install --lib ieee754; cabal install --lib network;
