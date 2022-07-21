@@ -1,5 +1,5 @@
 {-# OPTIONS --safe #-}
-module Cubical.Syntax.⟨⟩ where
+module Cubical.Syntax.Syntax where
 
 open import Cubical.Core.Primitives
 

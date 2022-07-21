@@ -3,7 +3,7 @@ module Cubical.Foundations.Structure where
 
 open import Cubical.Core.Everything
 open import Cubical.Foundations.Prelude
-open import Cubical.Syntax.⟨⟩
+open import Cubical.Syntax.Syntax
 
 private
   variable
@@ -28,7 +28,7 @@ instance
 
 -- Allow users to avoid importing the syntax module directly for
 -- backwards compatibility.
-open import Cubical.Syntax.⟨⟩ using (⟨_⟩) public
+open import Cubical.Syntax.Syntax using (⟨_⟩) public
 
 -- An S-structure should have a notion of S-homomorphism, or rather S-isomorphism.
 -- This will be implemented by a function ι : StrEquiv S ℓ'
