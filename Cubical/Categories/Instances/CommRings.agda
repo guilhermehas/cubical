@@ -29,7 +29,7 @@ open import Cubical.HITs.PropositionalTruncation
 
 open Category hiding (_∘_)
 open isUnivalent
-open CatIso
+open isIso
 open Functor
 open CommRingStr
 open RingHoms
@@ -49,17 +49,17 @@ _⋆_ CommRingsCategory {R} {S} {T}        = compCommRingHom R S T
 ⋆Assoc CommRingsCategory {R} {S} {T} {U} = compAssocCommRingHom {R = R} {S} {T} {U}
 isSetHom CommRingsCategory               = isSetRingHom _ _
 
-forgetfulFunctor : Functor CommRingsCategory (SET ℓ)
-F-ob forgetfulFunctor R    = R .fst , CommRingStr.is-set (snd R)
-F-hom forgetfulFunctor f x = f .fst x
-F-id forgetfulFunctor      = funExt (λ _ → refl)
-F-seq forgetfulFunctor f g = funExt (λ _ → refl)
+ForgetfulCommRing→Set : Functor CommRingsCategory (SET ℓ)
+F-ob ForgetfulCommRing→Set R    = R .fst , CommRingStr.is-set (snd R)
+F-hom ForgetfulCommRing→Set f x = f .fst x
+F-id ForgetfulCommRing→Set      = funExt (λ _ → refl)
+F-seq ForgetfulCommRing→Set f g = funExt (λ _ → refl)
 
 open Iso
 
 CommRingIsoIsoCatIso : {R S : CommRing ℓ} → Iso (CommRingIso R S) (CatIso CommRingsCategory R S)
-mor (fun CommRingIsoIsoCatIso e) = (e .fst .fun) , (e .snd)
-inv (fun (CommRingIsoIsoCatIso {R = R} {S}) e) =
+(fun CommRingIsoIsoCatIso e) .fst = (e .fst .fun) , (e .snd)
+(fun (CommRingIsoIsoCatIso {R = R} {S}) e) .snd .inv =
     e .fst .inv
   , makeIsRingHom (sym (cong (e .fst .inv) (pres1 (e .snd))) ∙ e .fst .leftInv _)
                   (λ x y → let rem = e .fst .rightInv _
@@ -70,14 +70,14 @@ inv (fun (CommRingIsoIsoCatIso {R = R} {S}) e) =
                                   ∙∙ (λ i → S .snd ._·_ (e .fst .rightInv x (~ i)) (e .fst .rightInv y (~ i)))
                                   ∙∙ sym (pres· (e .snd) _ _)
                            in injCommRingIso {R = R} {S} e _ _ rem)
-sec (fun CommRingIsoIsoCatIso e) = RingHom≡ (funExt (e .fst .rightInv))
-ret (fun CommRingIsoIsoCatIso e) = RingHom≡ (funExt (e .fst .leftInv))
-fun (fst (inv CommRingIsoIsoCatIso e)) = e .mor .fst
-inv (fst (inv CommRingIsoIsoCatIso e)) = e .inv .fst
-rightInv (fst (inv CommRingIsoIsoCatIso e)) x i = fst (e .sec i) x
-leftInv (fst (inv CommRingIsoIsoCatIso e)) x i = fst (e .ret i) x
-snd (inv CommRingIsoIsoCatIso e) = e .mor .snd
-rightInv CommRingIsoIsoCatIso x = CatIso≡ _ _ (RingHom≡ refl) (RingHom≡ refl)
+(fun CommRingIsoIsoCatIso e) .snd .sec = RingHom≡ (funExt (e .fst .rightInv))
+(fun CommRingIsoIsoCatIso e) .snd .ret = RingHom≡ (funExt (e .fst .leftInv))
+fun (fst (inv CommRingIsoIsoCatIso e)) = e .fst .fst
+inv (fst (inv CommRingIsoIsoCatIso e)) = e .snd .inv .fst
+rightInv (fst (inv CommRingIsoIsoCatIso e)) x i = fst (e .snd .sec i) x
+leftInv  (fst (inv CommRingIsoIsoCatIso e)) x i = fst (e .snd .ret i) x
+snd (inv CommRingIsoIsoCatIso e) = e .fst .snd
+rightInv CommRingIsoIsoCatIso x = CatIso≡ _ _ (RingHom≡ refl)
 leftInv (CommRingIsoIsoCatIso {R = R} {S}) x =
   Σ≡Prop (λ x → isPropIsRingHom (CommRingStr→RingStr (R .snd))
                                 (x .fun)
@@ -97,13 +97,13 @@ univ isUnivalentCommRingsCategory R S = subst isEquiv (funExt rem) (≡≃CatIso
   rem : ∀ p → ≡≃CatIso .fst p ≡ pathToIso p
   rem p = CatIso≡ _ _
     (RingHom≡ (funExt λ x → cong (transport (cong fst p)) (sym (transportRefl x))))
-    (RingHom≡ refl)
 
-TerminalCommRing : Terminal {ℓ-suc ℓ-zero} CommRingsCategory
-fst TerminalCommRing = UnitCommRing
-fst (fst (snd TerminalCommRing y)) _ = tt*
-snd (fst (snd TerminalCommRing y)) = makeIsRingHom refl (λ _ _ → refl) (λ _ _ → refl)
-snd (snd TerminalCommRing y) f = RingHom≡ (funExt (λ _ → refl))
+module _ {ℓ : Level} where
+  TerminalCommRing : Terminal CommRingsCategory
+  fst TerminalCommRing = UnitCommRing {ℓ = ℓ}
+  fst (fst (snd TerminalCommRing y)) _ = tt*
+  snd (fst (snd TerminalCommRing y)) = makeIsRingHom refl (λ _ _ → refl) (λ _ _ → refl)
+  snd (snd TerminalCommRing y) f = RingHom≡ (funExt (λ _ → refl))
 
 open Pullback
 
@@ -130,9 +130,9 @@ module _ {ℓJ ℓJ' : Level} where
   open LimCone
   open Cone
 
-  LimitsCommRingsCategory : Limits {ℓJ} {ℓJ'} CommRingsCategory
+  LimitsCommRingsCategory : Limits {ℓJ} {ℓJ'} (CommRingsCategory {ℓ = ℓ-max ℓJ ℓJ'})
   fst (lim (LimitsCommRingsCategory J D)) =
-    lim {J = J} (completeSET J (funcComp forgetfulFunctor D)) .fst
+    lim {J = J} (completeSET J (funcComp ForgetfulCommRing→Set D)) .fst
   0r (snd (lim (LimitsCommRingsCategory J D))) =
     cone (λ v _ → 0r (snd (F-ob D v)))
          (λ e → funExt (λ _ → F-hom D e .snd .pres0))
@@ -153,7 +153,7 @@ module _ {ℓJ ℓJ' : Level} where
          ∙ λ i → -_ (snd (F-ob D _)) (coneOutCommutes x e i tt*)))
   isCommRing (snd (lim (LimitsCommRingsCategory J D))) =
     makeIsCommRing
-      (isSetCone (funcComp forgetfulFunctor D) (Unit* , _))
+      (isSetCone (funcComp ForgetfulCommRing→Set D) (Unit* , _))
       (λ _ _ _ → cone≡ (λ v → funExt (λ _ → snd (F-ob D v) .+Assoc _ _ _)))
       (λ _ → cone≡ (λ v → funExt (λ _ → +IdR (snd (F-ob D v)) _)))
       (λ _ → cone≡ (λ v → funExt (λ _ → +InvR (snd (F-ob D v)) _)))
@@ -163,17 +163,17 @@ module _ {ℓJ ℓJ' : Level} where
       (λ _ _ _ → cone≡ (λ v → funExt (λ _ → ·DistR+ (snd (F-ob D v)) _ _ _)))
       (λ _ _ → cone≡ (λ v → funExt (λ _ → snd (F-ob D v) .·Comm _ _)))
   fst (coneOut (limCone (LimitsCommRingsCategory J D)) v) =
-    coneOut (limCone (completeSET J (funcComp forgetfulFunctor D))) v
+    coneOut (limCone (completeSET J (funcComp ForgetfulCommRing→Set D))) v
   pres0 (snd (coneOut (limCone (LimitsCommRingsCategory J D)) v)) = refl
   pres1 (snd (coneOut (limCone (LimitsCommRingsCategory J D)) v)) = refl
   pres+ (snd (coneOut (limCone (LimitsCommRingsCategory J D)) v)) = λ _ _ → refl
   pres· (snd (coneOut (limCone (LimitsCommRingsCategory J D)) v)) = λ _ _ → refl
   pres- (snd (coneOut (limCone (LimitsCommRingsCategory J D)) v)) = λ _ → refl
   coneOutCommutes (limCone (LimitsCommRingsCategory J D)) e =
-    RingHom≡ (coneOutCommutes (limCone (completeSET J (funcComp forgetfulFunctor D))) e)
+    RingHom≡ (coneOutCommutes (limCone (completeSET J (funcComp ForgetfulCommRing→Set D))) e)
   univProp (LimitsCommRingsCategory J D) c cc =
     uniqueExists
-      ( (λ x → limArrow (completeSET J (funcComp forgetfulFunctor D))
+      ( (λ x → limArrow (completeSET J (funcComp ForgetfulCommRing→Set D))
                         (fst c , snd c .is-set)
                         (cone (λ v _ → coneOut cc v .fst x)
                               (λ e → funExt (λ _ → funExt⁻ (cong fst (coneOutCommutes cc e)) x))) x)

@@ -12,7 +12,8 @@ open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.Equiv
 
 open import Cubical.Data.Bool
-open import Cubical.Data.Int
+open import Cubical.Data.Nat
+open import Cubical.Data.Int hiding (_+_)
 open import Cubical.Data.Sigma
 
 open import Cubical.Algebra.Group
@@ -60,24 +61,26 @@ private
   pathIso {p = p} = compIso (congIso (equivToIso (_ , compPathr-isEquiv p)))
                             (pathToIso (cong (p ∙ p ≡_) (lCancel p)))
 
+
 --- H⁰(RP²) ≅ ℤ ----
+connectedRP¹ : (x : RP²) → ∥ point ≡ x ∥₁
+connectedRP¹ point = ∣ refl ∣₁
+connectedRP¹ (line i) =
+  isOfHLevel→isOfHLevelDep 1 {B = λ x → ∥ point ≡ x ∥₁}
+    (λ _ → isPropPropTrunc) ∣ refl ∣₁ ∣ refl ∣₁ line i
+connectedRP¹ (square i j) = helper i j
+  where
+  helper : SquareP (λ i j → ∥ point ≡ square i j ∥₁)
+                   (isOfHLevel→isOfHLevelDep 1 {B = λ x → ∥ point ≡ x ∥₁}
+                     (λ _ → isPropPropTrunc) ∣ refl ∣₁ ∣ refl ∣₁ line)
+                   (symP (isOfHLevel→isOfHLevelDep 1 {B = λ x → ∥ point ≡ x ∥₁}
+                           (λ _ → isPropPropTrunc) ∣ refl ∣₁ ∣ refl ∣₁ line))
+                   refl refl
+  helper = toPathP (isOfHLevelPathP 1 isPropPropTrunc _ _ _ _)
+
+
 H⁰-RP²≅ℤ : GroupIso (coHomGr 0 RP²) ℤGroup
 H⁰-RP²≅ℤ = H⁰-connected point connectedRP¹
-  where
-  connectedRP¹ : (x : RP²) → ∥ point ≡ x ∥₁
-  connectedRP¹ point = ∣ refl ∣₁
-  connectedRP¹ (line i) =
-    isOfHLevel→isOfHLevelDep 1 {B = λ x → ∥ point ≡ x ∥₁}
-      (λ _ → isPropPropTrunc) ∣ refl ∣₁ ∣ refl ∣₁ line i
-  connectedRP¹ (square i j) = helper i j
-    where
-    helper : SquareP (λ i j → ∥ point ≡ square i j ∥₁)
-                     (isOfHLevel→isOfHLevelDep 1 {B = λ x → ∥ point ≡ x ∥₁}
-                       (λ _ → isPropPropTrunc) ∣ refl ∣₁ ∣ refl ∣₁ line)
-                     (symP (isOfHLevel→isOfHLevelDep 1 {B = λ x → ∥ point ≡ x ∥₁}
-                             (λ _ → isPropPropTrunc) ∣ refl ∣₁ ∣ refl ∣₁ line))
-                     refl refl
-    helper = toPathP (isOfHLevelPathP 1 isPropPropTrunc _ _ _ _)
 
 --- H¹(RP²) ≅ 0 ----
 isContr-H¹-RP²-helper : isContr ∥ Σ[ x ∈ coHomK 1 ] Σ[ p ∈ x ≡ x ] p ∙ p ≡ refl ∥₂
@@ -132,3 +135,33 @@ H²-RP²≅Bool = invGroupIso (≅Bool (compIso
                                     (compIso (setTruncIso funSpaceIso-RP²)
                                              Iso-H²-RP²₁)
                                     Iso-H²-RP²₂))
+
+-- Higher groups
+Hⁿ-RP²Contr : (n : ℕ) → isContr (coHom (3 + n) RP²)
+Hⁿ-RP²Contr n =
+  subst isContr
+    (isoToPath (setTruncIso (invIso (funSpaceIso-RP²))))
+    (∣ c ∣₂ , c-id)
+  where
+  c : Σ[ x ∈ coHomK (3 + n) ] Σ[ p ∈ x ≡ x ] p ≡ sym p
+  c = (0ₖ _) , refl , refl
+
+  c-id : (p : ∥ _ ∥₂) → ∣ c ∣₂ ≡ p
+  c-id =
+    ST.elim (λ _ → isSetPathImplicit)
+      (uncurry (coHomK-elim _
+        (λ _ → isOfHLevelΠ (3 + n) λ _ → isProp→isOfHLevelSuc (2 + n) (squash₂ _ _))
+          (uncurry λ p q →
+            T.rec (isProp→isOfHLevelSuc (suc n) (squash₂ _ _)) (λ pp →
+              T.rec (isProp→isOfHLevelSuc n (squash₂ _ _))
+                (λ qq → cong ∣_∣₂ (ΣPathP (refl , ΣPathP (pp , qq))))
+                (isConnectedPathP _ {A = (λ i → pp i ≡ sym (pp i))}
+                  (isConnectedPath _
+                    (isConnectedPath _ (isConnectedKn (2 + n)) _ _) _ _)
+                      refl q .fst))
+              (Iso.fun (PathIdTruncIso _)
+                (isContr→isProp
+                  (isConnectedPath _ (isConnectedKn (2 + n)) _ _) ∣ refl ∣ ∣ p ∣)))))
+
+Hⁿ-RP²≅0 : (n : ℕ) → GroupIso (coHomGr (3 + n) RP²) (UnitGroup₀)
+Hⁿ-RP²≅0 n = contrGroupIsoUnit (Hⁿ-RP²Contr n)
